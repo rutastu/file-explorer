@@ -10,7 +10,7 @@ if ($path === '.')
 
 $iconMap = [
     'pdf' => 'bi bi-file-earmark-pdf',
-    'png' => 'bi bi-filetype-png',
+    'png' => 'bi bi-image-alt',
     'mp3' => 'bi bi-filetype-mp3',
     'docx' => 'bi bi-file-earmark-word',
     'xlsx' => 'bi bi-file-earmark-excel',
@@ -52,40 +52,55 @@ function convertedFileSize($size)
             color: black;
             text-decoration: none;
         }
+
+        i {
+            margin-right: 5px;
+        }
+
+        .checkbox {
+            margin: 5px;
+        }
+
+        .first-column {
+            width: 30px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <table class="table table-sm table-success table-striped">
-            <thead class="table-light">
-                <th>
-                    <input type="checkbox">
+            <thead>
+                <th class="first-column">
+                    <input class="checkbox" type="checkbox">
                 </th>
                 <th>Name</th>
                 <th>Size</th>
                 <th>Actions</th>
             </thead>
             <tbody>
+                <!-- pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila  -->
                 <?php foreach ($files as $file) {
                     if ($file !== 'index.php') {
                         if ($file !== '..') {
+                            //atvaizduojame failu dydzius
                             $filePath = "$path/$file";
                             $fileSize = filesize($filePath);
                             $convertedFileSize = convertedFileSize($fileSize);
 
+                            //nustatome extension ir uzdedame atitinkama icon
                             $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
                             $icon = isset($iconMap[$fileExtension]) ? $iconMap[$fileExtension] : 'bi bi-file-earmark-medical';
                         }
 
                         echo "<tr>
-                    <td> <input type='checkbox'<td>
+                    <td class=\"first-column\">" . ($file !== '..' ? "<input class=\"checkbox\" type='checkbox'>" : "") . "</td>
                     <td><i class=\"$icon\"></i> <a href=\"?path=$path/$file\">$file</a></td>
                     <td>$convertedFileSize</td>
-                    <td></td>
+                    <td>" . ($file !== '..' ? "<i class=\"bi bi-pencil-square\"></i>" : "")  . ($file !== '..' ? "<i class=\"bi bi-trash3\"></i>" : "") . "</td>
                     </tr>";
                     }
-                }  //pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila 
+                }
                 ?>
             </tbody>
         </table>
