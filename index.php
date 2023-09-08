@@ -57,7 +57,7 @@ if (isset($_POST['editFile'])) {
     $oldFilename = isset($_POST['oldFilename']) ? $_POST['oldFilename'] : '';
     $newFilename = isset($_POST['newFilename']) ? $_POST['newFilename'] : '';
 
-    // Perform the file name update or rename operation here
+    // Failo pervadinimas
     if ($oldFilename && $newFilename) {
         $oldFilePath = "$path/$oldFilename";
         $newFilePath = "$path/$newFilename";
@@ -66,7 +66,7 @@ if (isset($_POST['editFile'])) {
             rename($oldFilePath, $newFilePath);
         }
     }
-    // Redirect back to the same page after processing the form
+    // Nukreipimas po pavadinimo pakeitimo
     header("Location: ?path=$path");
     exit;
 }
