@@ -8,10 +8,11 @@ unset($files[0]);
 if ($path === '.')
     unset($files[1]);
 
+//priskiriame ikonas prie skirtingu extensionu
 $iconMap = [
     'pdf' => 'bi bi-file-earmark-pdf',
     'png' => 'bi bi-image-alt',
-    'mp3' => 'bi bi-filetype-mp3',
+    'mp3' => 'bi bi-file-earmark-music',
     'docx' => 'bi bi-file-earmark-word',
     'xlsx' => 'bi bi-file-earmark-excel',
     'mp4' => 'bi bi-person-video2',
@@ -25,6 +26,7 @@ $iconMap = [
 $fileExtension = '';
 $icon = '';
 $convertedFileSize = '';
+$modifiedDate = '';
 
 function convertedFileSize($size)
 {
@@ -35,6 +37,18 @@ function convertedFileSize($size)
         $unit++;
     }
     return round($size, 2) . ' ' . $units[$unit];
+}
+
+
+if (isset($_GET['action']) and ($_GET['action']) === "edit" and isset($_GET['item'])) {
+    $fileToEdit = isset($_GET['item']) ? $_GET['item'] : '';
+    $form = "<form method='POST' class='input-group my-1' style='width: 25%'>
+    <input type='text' class='form-control' name='filename' placeholder='Modify file name'/>
+    <button class='btn btn-success'>Save</button>
+    </form>";
+} else {
+    $fileToEdit = '';
+    $form = "";
 }
 ?>
 
@@ -64,19 +78,32 @@ function convertedFileSize($size)
         .first-column {
             width: 30px;
         }
+
+        .modified-column {
+            width: 200px;
+        }
+
+        .size-column {
+            width: 100px;
+        }
+
+        .actions-column {
+            width: 75px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <table class="table table-sm table-success table-striped">
+        <table class="table table-sm table-success table-striped mt-5">
             <thead>
                 <th class="first-column">
-                    <input class="checkbox" type="checkbox">
+                    <input class="checkbox" type="checkbox" onclick="selectAll(event)">
                 </th>
                 <th>Name</th>
-                <th>Size</th>
-                <th>Actions</th>
+                <th class="modified-column">Modified</th>
+                <th class="size-column">Size</th>
+                <th class="actions-column">Actions</th>
             </thead>
             <tbody>
                 <!-- pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila  -->
@@ -91,20 +118,41 @@ function convertedFileSize($size)
                             //nustatome extension ir uzdedame atitinkama icon
                             $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
                             $icon = isset($iconMap[$fileExtension]) ? $iconMap[$fileExtension] : 'bi bi-file-earmark-medical';
+
+                            //patikriname, kada failas buvo modifikuotas
+                            $modifiedTimestamp = filemtime($filePath);
+                            $modifiedDate = date('Y-m-d H:i:s', $modifiedTimestamp);
                         }
 
                         echo "<tr>
                     <td class=\"first-column\">" . ($file !== '..' ? "<input class=\"checkbox\" type='checkbox'>" : "") . "</td>
-                    <td><i class=\"$icon\"></i> <a href=\"?path=$path/$file\">$file</a></td>
+                    <td><i class=\"$icon\"></i> <a href=\"?path=$path/$file&action=edit&item=$file\">$file </a></td>
+                    <td>$modifiedDate</td>
                     <td>$convertedFileSize</td>
-                    <td>" . ($file !== '..' ? "<i class=\"bi bi-pencil-square\"></i>" : "")  . ($file !== '..' ? "<i class=\"bi bi-trash3\"></i>" : "") . "</td>
+                    <td>" . ($file !== '..' ? "<a href='?action=edit&item=$file&path=$path'><i class=\"bi bi-pencil-square\"></i></a>" : "")  . ($file !== '..' ? "<i class=\"bi bi-trash3\"></i>" : "") . "</td>
                     </tr>";
+                    }
+                    if ($file === $fileToEdit) {
+                        echo "<tr>
+                        <td></td>
+                            <td colspan='5'>$form</td>
+                            </tr>
+                        ";
                     }
                 }
                 ?>
             </tbody>
         </table>
     </div>
+    <script>
+        // pasizymime visus checkboxus
+        function selectAll(e) {
+            e.target.checked = !e.target.checked;
+            document.querySelectorAll('input[type="checkbox"]').forEach(el => {
+                el.checked = !el.checked;
+            })
+        }
+    </script>
 </body>
 
 </html>
