@@ -43,13 +43,34 @@ function convertedFileSize($size)
 if (isset($_GET['action']) and ($_GET['action']) === "edit" and isset($_GET['item'])) {
     $fileToEdit = isset($_GET['item']) ? $_GET['item'] : '';
     $form = "<form method='POST' class='input-group my-1' style='width: 25%'>
-    <input type='text' class='form-control' name='filename' placeholder='Modify file name'/>
+    <input type='text' class='form-control' name='newFilename' placeholder='Modify file name'/>
+    <input type='hidden' name='oldFilename' value='$fileToEdit'>
+    <input type='hidden' name='editFile' value='1'>
     <button class='btn btn-success'>Save</button>
     </form>";
 } else {
     $fileToEdit = '';
     $form = "";
 }
+
+if (isset($_POST['editFile'])) {
+    $oldFilename = isset($_POST['oldFilename']) ? $_POST['oldFilename'] : '';
+    $newFilename = isset($_POST['newFilename']) ? $_POST['newFilename'] : '';
+
+    // Perform the file name update or rename operation here
+    if ($oldFilename && $newFilename) {
+        $oldFilePath = "$path/$oldFilename";
+        $newFilePath = "$path/$newFilename";
+
+        if (file_exists($oldFilePath) && !file_exists($newFilePath)) {
+            rename($oldFilePath, $newFilePath);
+        }
+    }
+    // Redirect back to the same page after processing the form
+    header("Location: ?path=$path");
+    exit;
+}
+
 ?>
 
 <!DOCTYPE html>
