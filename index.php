@@ -60,6 +60,13 @@ if (isset($_POST['editFile'])) {
     // Failo pervadinimas
     if ($oldFilename && $newFilename) {
         $oldFilePath = "$path/$oldFilename";
+        //padarome, kad vartotojui nereiktu rasyti extension pervadinant
+        $fileExtension = pathinfo($oldFilename, PATHINFO_EXTENSION);
+
+        if (empty(pathinfo($newFilename, PATHINFO_EXTENSION))) {
+            $newFilename .= '.' . $fileExtension;
+        }
+
         $newFilePath = "$path/$newFilename";
 
         if (file_exists($oldFilePath) && !file_exists($newFilePath)) {
@@ -67,6 +74,34 @@ if (isset($_POST['editFile'])) {
         }
     }
     // Nukreipimas po pavadinimo pakeitimo
+    header("Location: ?path=$path");
+    exit;
+}
+function createFileOrFolder($path, $name, $type = 'file')
+{
+    $fullPath = "$path/$name";
+
+    if ($type === 'file') {
+        // failui
+        if (!file_exists($fullPath)) {
+            $file = fopen($fullPath, 'w');
+            fclose($file);
+        }
+    } elseif ($type === 'folder') {
+        // folderiui
+        if (!file_exists($fullPath)) {
+            mkdir($fullPath);
+        }
+    }
+}
+
+if (isset($_POST['createItem'])) {
+    $newName = isset($_POST['newName']) ? $_POST['newName'] : '';
+    $newType = isset($_POST['newType']) ? $_POST['newType'] : '';
+
+    if (!empty($newName) && !empty($newType)) {
+        createFileOrFolder($path, $newName, $newType);
+    }
     header("Location: ?path=$path");
     exit;
 }
@@ -116,7 +151,10 @@ if (isset($_POST['editFile'])) {
 
 <body>
     <div class="container">
-        <table class="table table-sm table-success table-striped mt-5">
+        <?php if ($path !== '.') { ?>
+            <a class="btn btn-secondary mt-3" href="?path=<?= urlencode(dirname($path)) ?>">Back</a>
+        <?php } ?>
+        <table class="table table-sm table-white mt-5">
             <thead>
                 <th class="first-column">
                     <input class="checkbox" type="checkbox" onclick="selectAll(event)">
@@ -127,23 +165,23 @@ if (isset($_POST['editFile'])) {
                 <th class="actions-column">Actions</th>
             </thead>
             <tbody>
-                <!-- pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila  -->
+                <!-- pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila ir .. -->
                 <?php foreach ($files as $file) {
-                    if ($file !== 'index.php') {
-                        if ($file !== '..') {
-                            //atvaizduojame failu dydzius
-                            $filePath = "$path/$file";
-                            $fileSize = filesize($filePath);
-                            $convertedFileSize = convertedFileSize($fileSize);
+                    if ($file !== 'index.php' && $file !== '..') {
 
-                            //nustatome extension ir uzdedame atitinkama icon
-                            $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
-                            $icon = isset($iconMap[$fileExtension]) ? $iconMap[$fileExtension] : 'bi bi-file-earmark-medical';
+                        //atvaizduojame failu dydzius
+                        $filePath = "$path/$file";
+                        $fileSize = filesize($filePath);
+                        $convertedFileSize = convertedFileSize($fileSize);
 
-                            //patikriname, kada failas buvo modifikuotas
-                            $modifiedTimestamp = filemtime($filePath);
-                            $modifiedDate = date('Y-m-d H:i:s', $modifiedTimestamp);
-                        }
+                        //nustatome extension ir uzdedame atitinkama icon
+                        $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
+                        $icon = isset($iconMap[$fileExtension]) ? $iconMap[$fileExtension] : 'bi bi-file-earmark-medical';
+
+                        //patikriname, kada failas buvo modifikuotas
+                        $modifiedTimestamp = filemtime($filePath);
+                        $modifiedDate = date('Y-m-d H:i:s', $modifiedTimestamp);
+
 
                         echo "<tr>
                     <td class=\"first-column\">" . ($file !== '..' ? "<input class=\"checkbox\" type='checkbox'>" : "") . "</td>
@@ -164,14 +202,46 @@ if (isset($_POST['editFile'])) {
                 ?>
             </tbody>
         </table>
+        <button class="btn btn-primary mt-4" onclick="selectAllButton()">Select All</button>
+        <button class="btn btn-primary mt-4" onclick="deselectAllButton()">Deselect All</button>
+        <form method="POST" class="input-group my-1" style="width: 100%">
+            <input type="text" class="form-control" name="newName" placeholder="New file/folder name" />
+            <select name="newType" class="form-select">
+                <option value="file">File</option>
+                <option value="folder">Folder</option>
+            </select>
+            <input type="hidden" name="createItem" value="1">
+            <button class="btn btn-primary">Create</button>
+        </form>
     </div>
     <script>
-        // pasizymime visus checkboxus
+        // pasizymime visus checkboxus per checkboxą viršuje
         function selectAll(e) {
             e.target.checked = !e.target.checked;
             document.querySelectorAll('input[type="checkbox"]').forEach(el => {
                 el.checked = !el.checked;
             })
+        }
+
+        // pažymime visus checkboxus su mygtuku
+        function selectAllButton() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                //padarome, kad nebutu žymimas thead esantis checkboxas
+                if (!checkbox.closest('thead')) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+        //atžymime visus checkboxus su mygtuku
+        function deselectAllButton() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                //padarome, kad nebutu imamas thead esantis checkboxas
+                if (!checkbox.closest('thead')) {
+                    checkbox.checked = false;
+                }
+            });
         }
     </script>
 </body>
