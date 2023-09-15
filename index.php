@@ -1,5 +1,5 @@
 <?php
-$path = isset($_GET['path']) ? $_GET['path'] : '.';
+$path = isset($_GET['path']) ? $_GET['path'] : '.'; //kelias iki direktorijos
 
 $files = scandir($path);
 
@@ -79,7 +79,7 @@ if (isset($_POST['editFile'])) {
 }
 function createFileOrFolder($path, $name, $type = 'file')
 {
-    $fullPath = "$path/$name";
+    $fullPath = "$path/$name"; //pilnas kelias iki failo su failo pavadinimu.
 
     if ($type === 'file') {
         // failui
@@ -104,6 +104,34 @@ if (isset($_POST['createItem'])) {
     }
     header("Location: ?path=$path");
     exit;
+}
+
+function deleteFileOrFolder($path)
+{
+    if (file_exists($path)) {
+        if (is_dir($path)) {
+            // Folderio istrynimas patikrinant ar viduje yra failu su glob() funkcija
+            $files = glob($path . '/*');
+            foreach ($files as $file) {
+                is_dir($file) ? deleteFileOrFolder($file) : unlink($file);
+            }
+            rmdir($path);
+        } elseif (is_file($path)) {
+            // failo istrynimas
+            unlink($path);
+        }
+    }
+}
+
+if (isset($_GET['path'])) {
+    $path = $_GET['path'];
+
+    if (isset($_GET['delete'])) {
+        $itemToDelete = $_GET['delete'];
+        $fullPath = "$path/$itemToDelete";
+
+        deleteFileOrFolder($fullPath);
+    }
 }
 
 ?>
@@ -165,30 +193,33 @@ if (isset($_POST['createItem'])) {
                 <th class="actions-column">Actions</th>
             </thead>
             <tbody>
-                <!-- pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila ir .. -->
+                <!-- pajungiame foreach cikla, kad atvaizduotume failus kaip sarasa, isskyrus index faila, .git ir .. -->
                 <?php foreach ($files as $file) {
-                    if ($file !== 'index.php' && $file !== '..') {
+                    if ($file !== 'index.php' && $file !== '..' && $file !== '.git') {
 
-                        //atvaizduojame failu dydzius
+                        //atvaizduojame failu dydzius. Tikriname ar failas egzistuoja, kad nesipyktu su delete funkcija
                         $filePath = "$path/$file";
-                        $fileSize = filesize($filePath);
-                        $convertedFileSize = convertedFileSize($fileSize);
+                        if (file_exists($filePath)) {
+                            $fileSize = filesize($filePath);
+                            $convertedFileSize = convertedFileSize($fileSize);
+                        }
 
                         //nustatome extension ir uzdedame atitinkama icon
                         $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
                         $icon = isset($iconMap[$fileExtension]) ? $iconMap[$fileExtension] : 'bi bi-file-earmark-medical';
 
                         //patikriname, kada failas buvo modifikuotas
-                        $modifiedTimestamp = filemtime($filePath);
-                        $modifiedDate = date('Y-m-d H:i:s', $modifiedTimestamp);
-
+                        if (file_exists($filePath)) {
+                            $modifiedTimestamp = filemtime($filePath);
+                            $modifiedDate = date('Y-m-d H:i:s', $modifiedTimestamp);
+                        }
 
                         echo "<tr>
                     <td class=\"first-column\">" . ($file !== '..' ? "<input class=\"checkbox\" type='checkbox'>" : "") . "</td>
                     <td><i class=\"$icon\"></i> <a href=\"?path=$path/$file&action=edit&item=$file\">$file </a></td>
                     <td>$modifiedDate</td>
                     <td>$convertedFileSize</td>
-                    <td>" . ($file !== '..' ? "<a href='?action=edit&item=$file&path=$path'><i class=\"bi bi-pencil-square\"></i></a>" : "")  . ($file !== '..' ? "<i class=\"bi bi-trash3\"></i>" : "") . "</td>
+                    <td>" . ($file !== '..' ? "<a href='?action=edit&item=$file&path=$path'><i class=\"bi bi-pencil-square\"></i></a>" : "")  . ($file !== '..' ? "<a href=\"?path=$path&delete=$file\"><i class=\"bi bi-trash3\"></i></a>" : "") . "</td>
                     </tr>";
                     }
                     if ($file === $fileToEdit) {
@@ -202,8 +233,8 @@ if (isset($_POST['createItem'])) {
                 ?>
             </tbody>
         </table>
-        <button class="btn btn-primary mt-4" onclick="selectAllButton()">Select All</button>
-        <button class="btn btn-primary mt-4" onclick="deselectAllButton()">Deselect All</button>
+        <button class="btn btn-primary mt-4 mb-4" onclick="selectAllButton()">Select All</button>
+        <button class="btn btn-primary mt-4 mb-4" onclick="deselectAllButton()">Deselect All</button>
         <form method="POST" class="input-group my-1" style="width: 100%">
             <input type="text" class="form-control" name="newName" placeholder="New file/folder name" />
             <select name="newType" class="form-select">
